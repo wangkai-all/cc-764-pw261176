@@ -1,0 +1,10 @@
+{
+  "name": "checkpoint-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "检查点位置的总耗时与存储占用推演（纯数据模拟，零依赖）",
+  "scripts": {
+    "test": "node tests/run-tests.mjs && node tests/smoke-ui.mjs",
+    "start": "python3 -m http.server 8000"
+  }
+}

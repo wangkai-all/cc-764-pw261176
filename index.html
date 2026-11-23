@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>checkpoint-lab · 检查点成本与恢复推演</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="page-head">
+  <div>
+    <h1>checkpoint-lab</h1>
+    <p class="sub">任务依赖 · 失败恢复 · 检查点成本推演 —— 纯数据模拟，不搭建真实调度集群</p>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- 场景与参数 -->
+  <section class="panel" id="panel-scenario">
+    <h2>场景</h2>
+    <div class="row wrap">
+      <label>示例
+        <select id="sel-scenario">
+          <option value="diamond">菱形依赖（共享上游）</option>
+          <option value="cascade">连锁失效（检查点失效）</option>
+          <option value="diskfail">磁盘写入失败</option>
+          <option value="random">随机场景（固定种子）</option>
+        </select>
+      </label>
+      <label id="lbl-random-seed" hidden>图种子
+        <input id="inp-random-seed" type="number" value="20261124" step="1" style="width:7em">
+      </label>
+      <label>模拟种子
+        <input id="inp-seed" type="number" value="1" step="1" style="width:5em">
+      </label>
+      <label>模拟次数
+        <input id="inp-sims" type="number" value="64" min="4" max="512" step="4" style="width:5em">
+      </label>
+    </div>
+    <p class="desc" id="scenario-desc"></p>
+    <p class="desc muted" id="scenario-meta"></p>
+    <h3>注入一次失败（作用于"单次运行"）</h3>
+    <div class="row wrap">
+      <label>任务失败
+        <select id="sel-inject-node"><option value="">不注入</option></select>
+      </label>
+      <label>写盘失败
+        <select id="sel-inject-save"><option value="">不注入</option></select>
+      </label>
+      <span class="chip" id="chip-inject" hidden></span>
+    </div>
+  </section>
+
+  <!-- DAG 与策略 -->
+  <section class="panel" id="panel-dag">
+    <h2>依赖图 · 点击节点勾选/取消检查点</h2>
+    <div class="dag-wrap"><svg id="dag" role="img" aria-label="任务依赖图"></svg></div>
+    <div class="legend" id="dag-legend"></div>
+    <div class="row">
+      <span class="meter-label">手动策略存储</span>
+      <span class="meter" id="storage-meter"><span class="meter-fill" id="storage-fill"></span></span>
+      <span id="storage-text" class="muted"></span>
+    </div>
+  </section>
+
+  <!-- 运行控制 -->
+  <section class="panel" id="panel-run">
+    <h2>运行</h2>
+    <div class="row wrap">
+      <button id="btn-single">单次运行（可步进）</button>
+      <button id="btn-step-prev" disabled>‹ 上一步</button>
+      <button id="btn-step-next" disabled>下一步 ›</button>
+      <button id="btn-step-play" disabled>播放</button>
+      <button id="btn-mc">蒙特卡洛评估手动策略</button>
+    </div>
+    <p class="desc muted" id="run-status"></p>
+    <div class="stat-row" id="stat-row"></div>
+  </section>
+
+  <!-- 事件流 -->
+  <section class="panel" id="panel-log">
+    <h2>事件流 · 重算链逐步查看</h2>
+    <ol id="event-log" class="event-log"></ol>
+  </section>
+
+  <!-- 图表 -->
+  <section class="panel viz-root" id="panel-charts">
+    <h2>总耗时分布（手动策略，蒙特卡洛）</h2>
+    <div id="histogram"></div>
+    <h2>策略配对对比（同一组种子）</h2>
+    <div class="row wrap">
+      <button id="btn-compare">配对对比：无检查点 vs 手动 vs 推荐</button>
+    </div>
+    <div id="compare-time"></div>
+    <div id="compare-storage"></div>
+    <div id="compare-table"></div>
+  </section>
+
+  <!-- 优化器 -->
+  <section class="panel viz-root" id="panel-optimizer">
+    <h2>检查点策略优化器</h2>
+    <div class="row wrap">
+      <button id="btn-exact">精确搜索（小规模）</button>
+      <button id="btn-greedy">贪心近似</button>
+      <button id="btn-lb">计算松弛下界</button>
+      <button id="btn-apply" disabled>采用推荐策略</button>
+    </div>
+    <p class="desc muted">
+      精确搜索枚举所有满足存储上限的子集，给出该评估口径下的真实最优；
+      贪心只是可行上界，<strong>不保证最优</strong>；松弛下界假设读写零成本、保存必成功、全部保存。
+      三者共同给出区间：下界 ≤ 最优 ≤ 上界。
+    </p>
+    <div id="bounds"></div>
+    <div id="optimizer-table"></div>
+  </section>
+</main>
+
+<footer class="page-foot">
+  <p>模型：崩溃-恢复语义；共享上游按并集只算一次；检查点仅在前置输入一致时复用；确定性任务重算不改变输出版本。详见 README.md。</p>
+</footer>
+
+<div id="tooltip" class="tooltip" hidden></div>
+<script src="src/engine.js"></script>
+<script src="src/scenarios.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>
